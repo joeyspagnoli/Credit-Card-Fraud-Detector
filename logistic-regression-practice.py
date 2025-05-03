@@ -63,6 +63,7 @@ df = df.with_columns( #Applies the changes
     .cast(pl.Int64) #Makes sure its the integer type
     .alias("Category") #Tells polars to overwite the existing Category column
 )
+print(df.head())
 
 #Split into X and Y
 X = df['Message']
@@ -73,6 +74,37 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 #Build the pipeline
 pipeline = Pipeline([
     #First thing that is needed to be done is tokenize X
-    ('tfidf', TfidfVectorizer(stop_words='english'))
+    ('tfidf', TfidfVectorizer(stop_words='english')),
+
+    #Then apply logistic regression to tokenized input
     ('clf', LogisticRegression())
 ])
+
+model = pipeline.fit(X_train, Y_train)
+
+preds = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(Y_test, preds))
+
+test_data = list(zip(X_test.to_list(), Y_test.to_list()))
+
+samples = random.sample(test_data, 5)
+print("Ham : 0, Spam : 1")
+print("\nSample Predictions:\n")
+for message, true_label in samples:
+    prediction = model.predict([message])[0]
+    print(f"Message: {message[:60]}...")  # Truncate long messages
+    print(f"True Label: {true_label}, Predicted: {prediction}")
+    print("-" * 60)
+
+input_mail = ["I've been searching for the right words to thank you for this breather. I promise i wont take your help for granted and will fulfil my promise. You have been wonderful and a blessing at all times"]
+
+prediction = model.predict(input_mail)
+
+print(prediction)
+
+if (prediction[0]==0):
+  print('Ham mail')
+
+else:
+  print('Spam mail')
